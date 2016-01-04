@@ -2,101 +2,87 @@
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
+#include <assert.h>
 
-#define N_CITIES 37 //this is actually the number of rows in our cities file.
-#define BCN 4
-#define POP_SIZE 100
+#include "genericFunctions.h"
+#include "mutations.h"
+#include "crossover.h"
 
+#ifndef MY_CONST
+#define MY_CONST
+    #define N_CITIES 37
+    #define BCN 4
+    #define POP_SIZE 100
+    #define MUTATION_RATE 0.01
+    #define SAMPLE_SIZE 10 
+#endif
 
-int readCities(int mat[N_CITIES][N_CITIES], char strs[N_CITIES][40])
-{
-   char buffer[305];
-   char *record;
-   int i=0,j=0;
-   FILE *fstream = fopen("taulaciutats.csv","r");
-   if(fstream == NULL) {
-	  printf("\n file opening failed ");
-	  return 0 ;
-   }
+int main() {
 
-   while(fgets(buffer,305,fstream)!=NULL) {
-	 record = strtok(buffer,";");
-	 j=0;
-	 while(record != NULL) {
-		 if(j == 0){
-			 if(i > 0 )
-				 strcpy(strs[i-1], record);//we save the name of the cities in this vector
-		 }
-		 else if(i>0){
-			 if(!strcmp(record,"-")) *record='0';
-			 mat[i-1][j-1] = atoi(record) ; //ROW and column one are strings
-		 }
-		 record = strtok(NULL,";"); //Field separator
-		 j++;
-	 }
-	 i++ ;
-   }
-   fclose(fstream);
-   return 1;
-}
+    int i=0,j=0;
 
-void shuffle(int cities[N_CITIES-1], int pop[N_CITIES-1], int n){
-   int i;
-   for(i=0;i<(N_CITIES-1);i++){ //here we initialize the vector we will use to create the population
-      if(i<(BCN-1)) cities[i]=i;
-      else cities[i]=i+1;                      
-   }
-    if (n > 1) {
-        for (i = 0; i < n - 1; i++) {
-          int j = i + rand() / (RAND_MAX / (n - i) + 1);
-          int t = cities[j];
-          cities[j] = cities[i];
-          cities[i] = t;
-        }
+    int *cities,**mat,**pop,**next;
+    char **strs;
+    FILE *fp;
+
+    cities = (int*)  malloc((N_CITIES-1)*sizeof(int));   assert(cities!=NULL);
+    mat    = (int**) malloc( N_CITIES   *sizeof(int*));  assert(mat!=NULL);
+    pop    = (int**) malloc( POP_SIZE   *sizeof(int*));  assert(pop!=NULL);
+    next   = (int**) malloc( SAMPLE_SIZE*sizeof(int*));  assert(next!=NULL);
+    strs   = (char**)malloc( N_CITIES   *sizeof(char*)); assert(strs!=NULL);
+    for (i=0;i<N_CITIES;i++) {
+        mat[i]  = (int*) malloc( N_CITIES   *sizeof(int));  assert(mat[i]!=NULL);
+        strs[i] = (char*)malloc( 40         *sizeof(char)); assert(strs[i]!=NULL);
     }
-    for(i=0;i<n;i++) pop[i]=cities[i];
-}
+    for (i=0;i<POP_SIZE;i++) {
+        pop[i]  = (int*) malloc((N_CITIES-1)*sizeof(int));  assert(pop[i]!=NULL);
+    }
+    for (i=0;i<SAMPLE_SIZE;i++) {
+        next[i] = (int*) malloc((N_CITIES-1)*sizeof(int));  assert(next[i]!=NULL);
+    }
 
-void generatePopulation(int cities[N_CITIES-1], int pop[POP_SIZE][N_CITIES-1]){
-     int i=0;
-     for(i=0;i<(POP_SIZE);i++){
-        shuffle(cities,pop[i],N_CITIES-1);  
-     }         
-}
+    srand(time(NULL));
+    readCities(mat, strs, N_CITIES, 40);
+    generatePopulation(cities,pop,N_CITIES,POP_SIZE,BCN);
+    /*for (i=0;i<POP_SIZE;i++){
+        for(j=0;j<N_CITIES;j++)
+            fprintf(stderr,"%d ",pop[i][j]);
+        fprintf(stderr,"\n");
+    }*/
 
-int calculateFitness(int pop[N_CITIES-1], int mat[N_CITIES][N_CITIES]){
-    int i=0,fitness=0;
-    fitness+=mat[(BCN-1)][(pop[0])]; 
-    for(i=0;i<(N_CITIES-2);i++)  fitness+=mat[(pop[i])][(pop[i+1])]; 
-    fitness+=mat[(pop[i])][(BCN-1)];
-    return fitness;
-} 
+    fp=fopen("prova.txt","w");
 
+    for(i=0;i<POP_SIZE;i++){
+        for(j=0;j<(N_CITIES-1);j++){
+            fprintf(fp,"%d;", pop[i][j]);
+        }
+        fprintf(fp," fitness: %g.\n",calculateFitness(pop[i],mat,N_CITIES,BCN));
+    }
 
-int main()
-{
-   int cities[N_CITIES-1];//we dont take into account BCN since it has to be the first and the last city
-   int i=0,j=0;
-   int mat[N_CITIES][N_CITIES];
-   int pop[POP_SIZE][N_CITIES-1];
-   char strs[N_CITIES][40];
-   
-   srand(time(NULL));
-   readCities(mat, strs);
-   generatePopulation(cities, pop);
+    tournament(pop,mat,N_CITIES,POP_SIZE,SAMPLE_SIZE,next,10,BCN);
 
-
-   FILE *fp;
-   fp=fopen("prova.txt","w");
-   
-   for(i=0;i<POP_SIZE;i++){
+    for(i=0;i<SAMPLE_SIZE;i++){
+        for(j=0;j<(N_CITIES-1);j++){
+            fprintf(fp,"%d;", next[i][j]);
+        }
+        fprintf(fp,"\n");
+    }
+    /* for(j=0;j<(N_CITIES-1);j++){
+    fprintf(fp,"%d;", pop[0][j]);
+    }
+    //displacementMutation(pop[0]);
+    fprintf(fp,"%\n");
     for(j=0;j<(N_CITIES-1);j++){
-       fprintf(fp,"%d;", pop[i][j]);
-     }
-     fprintf(fp," fitness: %d.\n",calculateFitness(pop[i],mat));
-   }
-   fclose(fp);
+    fprintf(fp,"%d;", pop[1][j]);
+    }
+    orderCrossover(pop[0],pop[1],pop[2]);
+    fprintf(fp,"%\n");
+    for(j=0;j<(N_CITIES-1);j++){
+    fprintf(fp,"%d;", pop[2][j]);
+    }*/
 
+    fclose(fp);
+    //free(mat);free(pop);free(cities);free(strs);free(next)//TODO FREE MEMORY
 
-   return 0 ;
- }
+    return 0 ;
+}
