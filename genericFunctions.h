@@ -1,4 +1,3 @@
-
 #ifndef F_READ_CITIES
 #define F_READ_CITIES
 int readCities(int **mat, char **strs, size_t ncities, size_t d_strs2);
@@ -31,5 +30,15 @@ int roulette(int **pop, int **mat, size_t ncities, size_t popsize, int **next, i
 
 #ifndef F_TOURNAMENT
 #define F_TOURNAMENT
-int tournament (int **pop, int **mat, size_t ncities, size_t popsize, size_t samplesize, int **next, int n, int bcn);
+int tournament (int **pop, int **mat, size_t ncities, size_t popsize, size_t samplesize, int **next, int t, int bcn);
+#endif
+
+#ifndef F_DOUBLE_FREE_INT
+#define F_DOUBLE_FREE_INT
+int doubleFreeInt(int **v, size_t dim2);
+#endif
+
+#ifndef F_DOUBLE_FREE_CHAR
+#define F_DOUBLE_FREE_CHAR
+int doubleFreeChar(char **v, size_t dim2);
 #endif

@@ -118,6 +118,7 @@ int roulette(int **pop, int **mat, size_t ncities, size_t popsize, int **next, i
              partialsum += fitness[i];
         }
         for (k=0;k<ncities-1;k++)
+            fprintf(stderr,"%d,%d,%d\n",i,j,k);
             next[j][k] = pop[i][k];
         j++;
         sum = 0;
@@ -126,26 +127,35 @@ int roulette(int **pop, int **mat, size_t ncities, size_t popsize, int **next, i
     return 0;
 }
 
-int tournament(int **pop, int **mat, size_t ncities, size_t popsize, size_t samplesize, int **next, int n, int bcn) {
-     int i=0,j=0,k=-1;
-     int best=DBL_MIN;
-     double fitness[samplesize];
-     int sample[samplesize];
-     while (j<n) {
-          while (i<samplesize)
-              sample[i] = rand()%popsize;//we select the members of the tournament
-          for (i=0;i<samplesize;i++)
-              fitness[i] = calculateFitness(pop[sample[i]],mat,ncities,bcn);
-          while (i<samplesize) {
-              if (fitness[i]>best) {
-                  best = fitness[i];                                          
-                  k = i; 
-              }
-          }
-          for(i=0;i<ncities-1;i++)
-              next[j][i] = pop[sample[k]][i];     
-          j++;      
-     }
-     return 0;
+int tournament(int **pop, int **mat, size_t ncities, size_t popsize, size_t samplesize, int **next, int t, int bcn) {
+    int i,j;
+    int *best,*contender;
+
+    for (i=0; i<samplesize; i++) {
+        best = pop[rand()%popsize];
+        for (j=2;j<t;j++) {
+            contender = pop[rand()%popsize];
+            if (calculateFitness(contender,mat,ncities,bcn) > calculateFitness(best,mat,ncities,bcn))
+                best = contender;
+        }
+        for (j=0;j<ncities-1;j++)
+            next[i][j] = contender[j];
+    }
+
+    return 0;
 }
 
+int doubleFreeInt(int **v, size_t dim2) {
+    int i;
+    for (i=0;i<dim2;i++)
+        free(v[i]);
+    free(v);
+    return 0;
+}
+int doubleFreeChar(char **v, size_t dim2) {
+    int i;
+    for (i=0;i<dim2;i++)
+        free(v[i]);
+    free(v);
+    return 0;
+}
