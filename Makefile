@@ -2,8 +2,8 @@
 # Opcions d'optimització
 # ======================
 COMPILER=gcc
-OPT=-g -Wall 
-#OPT=-O3 -Wall  
+#OPT=-g -Wall 
+OPT=-O3 -Wall  
 TAIL=-lm
 
 all : genetic

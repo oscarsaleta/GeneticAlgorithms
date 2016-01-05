@@ -71,7 +71,7 @@ double calculateFitness(int *pop, int **mat, size_t ncities, int bcn){
     fitness += mat[(bcn-1)][(pop[0])]; 
     for (i=0;i<(ncities-2);i++)
         fitness += mat[(pop[i])][(pop[i+1])]; 
-    fitness += mat[(pop[i])][(bcn-1)];
+    fitness += mat[(pop[ncities-1])][(bcn-1)];
     return 1./fitness;
 }
 
@@ -138,8 +138,7 @@ int tournament(int **pop, int **mat, size_t ncities, size_t popsize, size_t samp
             if (calculateFitness(contender,mat,ncities,bcn) > calculateFitness(best,mat,ncities,bcn))
                 best = contender;
         }
-        for (j=0;j<ncities-1;j++)
-            next[i][j] = contender[j];
+        next[i] = contender;
     }
 
     return 0;
