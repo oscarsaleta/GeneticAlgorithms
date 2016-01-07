@@ -4,6 +4,11 @@
 #include "genericFunctions.h"
 #include "mutations.h"
 
+int mutateChild(int *child, size_t ncities, double mutationrate) {
+    applyMutations(&child,ncities,1,mutationrate);
+    return 0;
+}
+
 int applyMutations(int **pop, size_t ncities, size_t popsize, double mutationrate) {
     int mutation = (rand()%3)+1;
     int i;

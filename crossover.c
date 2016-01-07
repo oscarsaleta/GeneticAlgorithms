@@ -3,50 +3,78 @@
 #include "genericFunctions.h"
 #include "crossover.h"
 
-int cxC(int *parent1, int *parent2, int *child1, int *child2, size_t ncities) {
+int cxC(int *parent1, int *parent2, int *child, size_t ncities) {
     int i, cycle=0, nextval, current, start;
     
-    for (i=0;i<ncities-1;i++) {
-        child1[i] = -1; //we initialize the vector with impossible values
-        child2[i] = -1;
-    }
+    for (i=0;i<ncities-1;i++) 
+        child[i] = -1; //we initialize the vector with impossible values
     start = rand()%(ncities-1);
 
-    child1[start] = parent1[start];
+    child[start] = parent1[start];
     current = start;
     while (!cycle) {
         if ((nextval = parent2[current])==parent1[start])
             break;
         for (i=0;i<ncities-1;i++) {
             if (parent1[i]==nextval) {
-                child1[i] = nextval;
+                child[i] = nextval;
                 current = i;
             }
         }
     }
-    child2[start] = parent2[start];
-    current = start;
-    while (!cycle) {
-        if ((nextval = parent1[current])==parent2[start])
-            break;
-        for (i=0;i<ncities-1;i++) {
-            if (parent2[i]==nextval) {
-                child2[i] = nextval;
-                current = i;
+    
+    for(i=0;i<ncities-1;i++) {
+        if(child[i]==-1) 
+            child[i] = parent2[i];
+    }
+    return 0;
+}
+
+int oxC(int *parent1, int *parent2, int *child, size_t ncities) {
+    int i,j;
+    int start,end,aux;
+    int copy[ncities-1];
+    for (i=0;i<ncities-1;i++) {
+        copy[i] = parent2[i];
+    }
+    start = rand()%(ncities-1);
+    end = rand()%(ncities-1);
+    if (end<start) {
+        aux = end;
+        end = start;
+        start = aux;
+    }
+    
+    for (i=start;i<=end;i++) {
+        child[i] = parent1[i];
+        for (j=0;j<ncities-1;j++) {
+            if (copy[j] == parent1[i]) {
+                copy[j] = -1;
+                break;
+            }
+        }
+    }
+    /*fprintf(stderr,"cp:");
+    for (i=0;i<ncities-1;i++)
+        fprintf(stderr,"%2d,",copy[i]);
+    fprintf(stderr,"\n");*/
+
+    for (i=0;i<ncities-1;i++) {
+        if (i<start || i>end) {
+            for (j=0;j<ncities-1;j++) {
+                if (copy[j]!=-1) {
+                    child[i] = copy[j];
+                    copy[j] = -1;
+                    break;
+                }
             }
         }
     }
 
-    for(i=0;i<ncities-1;i++) {
-        if(child1[i]==-1) 
-            child1[i] = parent2[i];
-        if (child2[i]==-1)
-            child2[i] = parent1[i];
-    }
     return 0;
 }
       
-int orderC(int *parent1, int *parent2, int *child1, int *child2, size_t ncities) {
+int orderC(int *parent1, int *parent2, int *child, size_t ncities) {
     int i,j,aux;
     int pos1,pos2;
     int copy[ncities-1];
@@ -61,23 +89,20 @@ int orderC(int *parent1, int *parent2, int *child1, int *child2, size_t ncities)
     }
     for(i=0;i<ncities-1;i++) {  
         if (i<pos1 || i>pos2) {
-            child1[i] = -1; //if we are outside the interval -1
-            child2[i] = -1;
+            child[i] = -1; //if we are outside the interval -1
         } else {
             for (j=0;j<ncities-1;j++) { //we remove the value from parent2
                 if (parent2[j]==parent1[i])
                     copy[j] = -1;
             }
-            child1[i] = parent1[i]; //we copy the subset
-            child2[i] = parent2[i];
+            child[i] = parent1[i]; //we copy the subset
         }
     }
     for (i=0;i<ncities-1;i++) {
-        if (child1[i] == -1) { // for every -1 in child
+        if (child[i] == -1) { // for every -1 in child
             for (j=0;j<ncities-1;j++) {
                 if (copy[j]!=-1) { // find the first parent2 not used value
-                    child1[i] = copy[j]; // copy to the child
-                    child2[i] = parent1[j];
+                    child[i] = copy[j]; // copy to the child
                     copy[j] = -1; // erase from parent
                 }
             }

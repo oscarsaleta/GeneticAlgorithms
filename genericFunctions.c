@@ -68,13 +68,18 @@ int generatePopulation(int *cities, int **pop, size_t ncities, size_t popsize, i
      return 0;
 }
 
-double calculateFitness(int *pop, int **mat, size_t ncities, int bcn){
+int calculateFitness(int *pop, int **mat, size_t ncities, int bcn){
     int i;
-    double fitness=0;
-    fitness += mat[(bcn-1)][(pop[0])]; 
-    for (i=0;i<(ncities-2);i++)
-        fitness += mat[(pop[i])][(pop[i+1])]; 
-    fitness += mat[(pop[ncities-1])][(bcn-1)];
+    int fitness;
+    fitness = mat[bcn-1][pop[0]]; 
+    //fprintf(stderr," i:%2d->%2d: %5d\n",bcn-1,pop[0],fitness);
+    for (i=0;i<(ncities-1)-1;i++) {
+        //fprintf(stderr,"%2d:%2d->%2d: %5d\n",i,pop[i],pop[i+1],mat[pop[i]][pop[i+1]]);
+        fitness += mat[pop[i]][pop[i+1]]; 
+    }
+    //fprintf(stderr," f:%2d->%2d: %5d\n",pop[ncities-2],bcn-1,mat[pop[ncities-2]][bcn-1]);
+    fitness += mat[pop[ncities-2]][bcn-1];
+    //fprintf(stderr,"Total:%5d\n\n\n",fitness);
     return fitness;
 }
 
@@ -133,15 +138,24 @@ int roulette(int **pop, int **mat, size_t ncities, size_t popsize, int **next, i
 int tournament(int **pop, int **mat, size_t ncities, size_t popsize, size_t samplesize, int **next, int t, int bcn) {
     int i,j;
     int *best,*contender;
+    int fitbest,fitcontender;
 
-    for (i=0; i<samplesize; i++) {
-        best = pop[rand()%popsize];
-        for (j=2;j<t;j++) {
-            contender = pop[rand()%popsize];
-            if (calculateFitness(contender,mat,ncities,bcn) < calculateFitness(best,mat,ncities,bcn))
-                best = contender;
+    #pragma omp parallel num_threads(4)
+    {
+        #pragma omp for
+        for (i=0; i<samplesize; i++) {
+            best = pop[rand()%popsize];
+            fitbest = calculateFitness(best,mat,ncities,bcn);
+            for (j=1;j<t;j++) {
+                contender = pop[rand()%popsize];
+                fitcontender = calculateFitness(contender,mat,ncities,bcn);
+                if (fitcontender < fitbest) {
+                    best = contender;
+                    fitbest = fitcontender;
+                }
+            }
+            memcpy(next[i],best,(ncities-1)*sizeof(int));
         }
-        memcpy(next[i],contender,(ncities-1)*sizeof(int));
     }
 
     return 0;
@@ -159,5 +173,16 @@ int doubleFreeChar(char **v, size_t dim2) {
     for (i=0;i<dim2;i++)
         free(v[i]);
     free(v);
+    return 0;
+}
+
+int printPop(int **pop, size_t popsize, size_t ncities, FILE *out) {
+    int i,j;
+    for (i=0;i<popsize;i++) {
+        for (j=0;j<ncities-1;j++)
+            fprintf(out,"%3d,",pop[i][j]);
+        fprintf(out,"\n");
+    }
+    fprintf(out,"\n");
     return 0;
 }

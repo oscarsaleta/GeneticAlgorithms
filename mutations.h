@@ -1,3 +1,8 @@
+#ifndef M_CHILD
+#define M_CHILD
+int mutateChild(int *child, size_t ncities, double mutationrate);
+#endif
+
 #ifndef M_APPLY
 #define M_APPLY
 int applyMutations(int **pop, size_t ncities, size_t popsize, double mutationrate);

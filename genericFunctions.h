@@ -15,7 +15,7 @@ int generatePopulation(int *cities, int **pop, size_t ncities, size_t popsize, i
 
 #ifndef F_CALC_FIT
 #define F_CALC_FIT
-double calculateFitness(int *pop, int **mat, size_t ncities, int bcn);
+int calculateFitness(int *pop, int **mat, size_t ncities, int bcn);
 #endif
 
 #ifndef F_FITTEST
@@ -41,4 +41,9 @@ int doubleFreeInt(int **v, size_t dim2);
 #ifndef F_DOUBLE_FREE_CHAR
 #define F_DOUBLE_FREE_CHAR
 int doubleFreeChar(char **v, size_t dim2);
+#endif
+
+#ifndef PRINT_POP
+#define PRINT_POP
+int printPop(int **pop, size_t popsize, size_t ncities, FILE *out);
 #endif
