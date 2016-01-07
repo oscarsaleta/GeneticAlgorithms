@@ -4,8 +4,9 @@
 #include "crossover.h"
 
 int cxC(int *parent1, int *parent2, int *child1, int *child2, size_t ncities) {
-    int i, cycle=0, current, start;
-    for(i=0;i<ncities-1;i++) {
+    int i, cycle=0, nextval, current, start;
+    
+    for (i=0;i<ncities-1;i++) {
         child1[i] = -1; //we initialize the vector with impossible values
         child2[i] = -1;
     }
@@ -14,46 +15,33 @@ int cxC(int *parent1, int *parent2, int *child1, int *child2, size_t ncities) {
     child1[start] = parent1[start];
     current = start;
     while (!cycle) {
-        if (child1[parent1[current]] == -1) {
-            child1[parent1[current]] = parent2[current];
-            current = parent1[parent2[current]];
-        } else
-            cycle = 1;
+        if ((nextval = parent2[current])==parent1[start])
+            break;
+        for (i=0;i<ncities-1;i++) {
+            if (parent1[i]==nextval) {
+                child1[i] = nextval;
+                current = i;
+            }
+        }
     }
-    //if (child2!=NULL) {
-        child2[start] = parent2[start];
-        current = start;
-        cycle = 0;
-        while (!cycle) {
-            if (child2[parent2[current]] == -1) {
-                child2[parent2[current]] = parent1[current];
-                current = parent2[parent1[current]];
-            } else
-                cycle = 1;
+    child2[start] = parent2[start];
+    current = start;
+    while (!cycle) {
+        if ((nextval = parent1[current])==parent2[start])
+            break;
+        for (i=0;i<ncities-1;i++) {
+            if (parent2[i]==nextval) {
+                child2[i] = nextval;
+                current = i;
+            }
         }
-    //}
+    }
 
-
-    /*cycle = 0;
-    current = parent2[rand()%(ncities-1)];
-    start = current; //we define the starting position
-    while(!cycle){ //while we have not found a cycle
-        for(i=0;i<ncities-1;i++) {
-             if(parent1[i]==current) {
-                 current = parent2[i];
-                 child1[i] = parent1[i];
-                 child2[i] = parent2[i];
-                 if(parent2[i]==start)
-                     cycle = 1;
-                 break;                    
-             }                            
-        }
-    }*/
     for(i=0;i<ncities-1;i++) {
         if(child1[i]==-1) 
-            child1[i] = parent1[i];
+            child1[i] = parent2[i];
         if (child2[i]==-1)
-            child2[i] = parent2[i];
+            child2[i] = parent1[i];
     }
     return 0;
 }

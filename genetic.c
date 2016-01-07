@@ -12,23 +12,33 @@
 #define MY_CONST
     #define N_CITIES 37
     #define BCN 4
-    #define POP_SIZE 500
-    #define MUTATION_RATE 0.15
+    #define POP_SIZE 300
+    #define MUTATION_RATE 0.01
     #define SAMPLE_SIZE 10 
     #define MAX_GENERATIONS 500
 #endif
 
-int main() {
+int main(int argc, char *argv[]) {
 
     int i,j,k;
+    char filename[30],filename2[5];
+    double mutationrate;
 
     int *cities,**mat,**pop,**next;
     char **strs;
-    FILE *fp;
+    FILE *fp,*fp2;
 
     int best;
     double fit,fitbest;
+    double sum;
     int *parent1,*parent2,*child1,*child2;
+
+    if (argc!=3
+            || sscanf(argv[1],"%lf",&mutationrate)!=1
+            || sscanf(argv[2],"%s",filename)!=1) {
+        fprintf(stderr,"genetic: mutation_rate filename\n");
+        return 1;
+    }
 
     fprintf(stderr,"TRAVELLING SALESMAN\n");
 
@@ -50,9 +60,9 @@ int main() {
     for (i=0;i<POP_SIZE;i++) {
         pop[i]  = (int*) malloc((N_CITIES-1)*sizeof(int));  assert(pop[i]!=NULL);
     }
-    /*for (i=0;i<SAMPLE_SIZE;i++) {
-        next[i] = (int*) malloc((N_CITIES-1)*sizeof(int));  assert(next[i]!=NULL);
-    }*/
+    for (i=0;i<N_CITIES-1;i++) {
+        next[i] = (int*) malloc((N_CITIES-1)*sizeof(int)); assert(next[i]!=NULL);
+    }
     fprintf(stderr," Done\n");
     /*---*/
 
@@ -61,6 +71,12 @@ int main() {
     fprintf(stderr,"- Reading distance matrix...");
     readCities(mat, strs, N_CITIES, 40);
     fprintf(stderr," Done\n");
+    /*for (i=0;i<N_CITIES;i++) {
+        fprintf(stderr,"%12s,",strs[i]);
+        for (j=0;j<N_CITIES;j++)
+            fprintf(stderr,"%4d,",mat[i][j]);
+        fprintf(stderr,"\n");
+    }*/
     /*---*/
 
     /*---*/
@@ -69,7 +85,10 @@ int main() {
     fprintf(stderr," Done\n");
     /*---*/
 
-    fp=fopen("prova.txt","w");
+    fp=fopen(filename,"w");
+    strcpy(filename2,"fit_");
+    strcat(filename2,filename);
+    fp2=fopen(filename2,"w");
 
     /*---*/
     for (k=0;k<MAX_GENERATIONS;k++) {
@@ -78,13 +97,12 @@ int main() {
         /*---*/
         fprintf(stderr,"  - Calculating fitness...");
         best = 0;
+        sum=0;
         fitbest = calculateFitness(pop[best],mat,N_CITIES,BCN);
         for(i=0;i<POP_SIZE;i++){
-            for(j=0;j<(N_CITIES-1);j++){
-                fprintf(fp,"%d;", pop[i][j]);
-            }
             fit = calculateFitness(pop[i],mat,N_CITIES,BCN);
-            if (fit>fitbest) {
+            sum+=fit;
+            if (fit<fitbest) {
                 best = i;
                 fitbest = fit;
             }
@@ -92,6 +110,7 @@ int main() {
         }
         fprintf(fp,"#Best: %d, fitness: %g\n",best,fitbest);
         fprintf(fp,"\n\n");
+        fprintf(fp2,"%5d %10.7g\n",k,sum/(double)POP_SIZE);
         fprintf(stderr," Done\n");
         /*---*/
 
@@ -101,34 +120,32 @@ int main() {
         fprintf(stderr," Done\n");
         /*---*/
 
-        for (i=0;i<POP_SIZE-1;i+=2) {
-            memcpy(parent1,next[rand()%SAMPLE_SIZE],N_CITIES-1);
-            memcpy(parent2,next[rand()%SAMPLE_SIZE],N_CITIES-1);
-            memcpy(child1,pop[i],N_CITIES-1);
-            memcpy(child2,pop[i+1],N_CITIES-1);
+        for (i=0;i<POP_SIZE-1-SAMPLE_SIZE;i+=2) {
+            memcpy(parent1,next[rand()%SAMPLE_SIZE],(N_CITIES-1)*sizeof(int));
+            memcpy(parent2,next[rand()%SAMPLE_SIZE],(N_CITIES-1)*sizeof(int));
             cxC(parent1,parent2,child1,child2,N_CITIES);
-            memcpy(pop[i],child1,N_CITIES-1);
-            memcpy(pop[i+1],child2,N_CITIES-1);
+            memcpy(pop[i],child1,(N_CITIES-1)*sizeof(int));
+            memcpy(pop[i+1],child2,(N_CITIES-1)*sizeof(int));
         }
-        applyMutations(pop,N_CITIES,POP_SIZE,MUTATION_RATE);
-        /*for(i=0;i<POP_SIZE;i++){
-            for(j=0;j<(N_CITIES-1);j++){
-                fprintf(fp,"%d;", pop[i][j]);
-            }
-            fprintf(fp,"\n");
-        }*/
-
+        for (i=POP_SIZE-1-SAMPLE_SIZE;i<POP_SIZE-1;i++) {
+            memcpy(pop[i],next[i-POP_SIZE-1],(N_CITIES-1)*sizeof(int));
+        }
+        //applyMutations(pop,N_CITIES,POP_SIZE,mutationrate);
     }
     /*---*/
 
 
     fclose(fp);
-    free(cities);
+    fclose(fp2);
+
+    /*free(cities);
+    free(parent1);
+    free(parent2);
+    free(child1);
+    free(child2);
     doubleFreeInt(mat,N_CITIES);
     doubleFreeInt(pop,N_CITIES-1);
-    //doublefree(next,N_CITIES-1);
-    doubleFreeChar(strs,N_CITIES);
-    //free(mat);free(pop);free(cities);free(strs);free(next)//TODO FREE MEMORY
+    doubleFreeChar(strs,N_CITIES);*/
 
     fprintf(stderr,"Fin.\n");
     return 0 ;

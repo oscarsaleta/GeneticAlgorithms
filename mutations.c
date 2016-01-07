@@ -9,7 +9,7 @@ int applyMutations(int **pop, size_t ncities, size_t popsize, double mutationrat
     int i;
     double aux;
     for (i=0; i<popsize;i++) {
-        aux = rand();
+        aux = (double)rand()/(double)RAND_MAX;
         if (aux<mutationrate) {
             switch (mutation) {
                 case 1:

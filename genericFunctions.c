@@ -16,20 +16,23 @@ int readCities(int **mat, char **strs, size_t ncities, size_t d_strs2) {
     }
 
     fgets(buffer,305,fstream);
-    for (i=1;i<=ncities;i++) {
+    buffer[0] = '\0';
+    for (i=0;i<=ncities;i++) {
         fgets(buffer,305,fstream);
-        record = strtok(buffer,";");
-        strcpy(strs[i-1],record);
-        j=1;
-        while((record=strtok(NULL,";"))!=NULL) {
-            if (!strcmp(record,"-"))
-                *record = '0';
-            mat[i-1][j-1] = atoi(record);
-            j++;
+        if (i>0) {
+            record = strtok(buffer,";");
+            strcpy(strs[i-1],record);
+            j=1;
+            while((record=strtok(NULL,";"))!=NULL) {
+                if (!strcmp(record,"-"))
+                    *record = '0';
+                mat[i-1][j-1] = atoi(record);
+                j++;
+            }
+            record = strtok(NULL,";");
+            buffer[0] = '\0';
         }
-        record = strtok(NULL,";");
     }
-    fclose(fstream);
     return 0;
 
     fclose(fstream);
@@ -72,7 +75,7 @@ double calculateFitness(int *pop, int **mat, size_t ncities, int bcn){
     for (i=0;i<(ncities-2);i++)
         fitness += mat[(pop[i])][(pop[i+1])]; 
     fitness += mat[(pop[ncities-1])][(bcn-1)];
-    return 1./fitness;
+    return fitness;
 }
 
 int fittest(int **pop, int **mat, size_t ncities, size_t popsize, int **next, int n, int bcn){
@@ -135,10 +138,10 @@ int tournament(int **pop, int **mat, size_t ncities, size_t popsize, size_t samp
         best = pop[rand()%popsize];
         for (j=2;j<t;j++) {
             contender = pop[rand()%popsize];
-            if (calculateFitness(contender,mat,ncities,bcn) > calculateFitness(best,mat,ncities,bcn))
+            if (calculateFitness(contender,mat,ncities,bcn) < calculateFitness(best,mat,ncities,bcn))
                 best = contender;
         }
-        next[i] = contender;
+        memcpy(next[i],contender,(ncities-1)*sizeof(int));
     }
 
     return 0;
