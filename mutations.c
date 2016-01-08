@@ -1,14 +1,33 @@
 #include <stdio.h>
 #include <stdlib.h>
-
 #include "genericFunctions.h"
 #include "mutations.h"
 
-int mutateChild(int *child, size_t ncities, double mutationrate) {
-    applyMutations(&child,ncities,1,mutationrate);
+/* Mutate child:
+ *  Forces mutation if two brothers are identical.
+ * Input:
+ *  *child: child to mutate
+ *  ncities: total number of cities
+ * Output:
+ *  *child: is modified
+ */
+int mutateChild(int *child, size_t ncities) {
+    /* Call applyMutations with 1 population size and probability 1 */
+    applyMutations(&child,ncities,1,1);
     return 0;
 }
 
+/* Apply mutations:
+ *  Goes through all the population and mutates them with probability mutationrate.
+ *  The kind of mutation is also randomly selected between the 4 implemented mutations.
+ * Input:
+ *  **pop: (popsize)*(ncities-1) matrix of population
+ *  ncities: total number of cities
+ *  popsize: number of individuals in population
+ *  mutationrate: number between 0 and 1 that gives the probability of mutation
+ * Output:
+ *  **pop: the members are overwritten if mutated
+ */
 int applyMutations(int **pop, size_t ncities, size_t popsize, double mutationrate) {
     int mutation = (rand()%3)+1;
     int i;
@@ -38,14 +57,25 @@ int applyMutations(int **pop, size_t ncities, size_t popsize, double mutationrat
     return 0;
 }
 
+/* Inversion mutation:
+ * Input:
+ *  *ind: pointer to the individual that will mutate (length ncities-1)
+ *  ncities: total number of cities
+ * Output:
+ *  *ind: is rewritten
+ */
 int inversionM(int *ind, size_t ncities) {
-    int copy[ncities-1];
+    /* Loop variables */
     int i;
+    /* Substring selection  variables */
     int pos1,pos2;
+    /* Copy of the vector */
+    int copy[ncities-1];
     for (i=0;i<ncities-1;i++)
-        copy[i]=ind[i];//first we copy the vector 
+        copy[i]=ind[i];
+    /* Select positions and copy the substring in opposite order */
     pos1 = rand()%(ncities-1); 
-    pos2 = rand()%(ncities-1);//we select two positions and we have to compare which one is greater
+    pos2 = rand()%(ncities-1);
     if (pos2>pos1) {
         for (i=0;i<=(pos2-pos1);i++)
             ind[pos1+i] = copy[pos2-i];
@@ -56,25 +86,43 @@ int inversionM(int *ind, size_t ncities) {
     return 0;
 }
 
+/* Insertion mutation:
+ * Input:
+ *  *ind: pointer to the individual that will mutate (length ncities-1)
+ *  ncities: total number of cities
+ * Output:
+ *  *ind: is rewritten
+ */
 int insertionM(int *ind, size_t ncities) {
-    int aux,i;
+    /* Loop variables */
+    int i;
+    /* Position of city and backup */
+    int aux;
     int pos = rand()%(ncities-1); 
-    int city = rand()%(ncities-1);//we select two positions: the city and the position we insert it in
-    aux = ind[city];//we copy the value of the city so that we can recover it later
+    int city = rand()%(ncities-1);
+    aux = ind[city];
+    /* Displace cities to the right or left */
     if (city>pos) {
         for (i=city;i>pos;i--)
-            ind[i] = ind[i-1];//we displace everything forward if the city we are moving goes to an earlier position
+            ind[i] = ind[i-1];
     } else if (pos>city) {
         for (i=city;i<pos;i++)
-            ind[i] = ind[i+1];//in this case we move all backwards
+            ind[i] = ind[i+1];
     } else {
-        // Do nothing
         return 1;
     }
-    ind[pos] = aux;//we insert the city in the vector
+    /* Copy city */
+    ind[pos] = aux;
     return 0;
 }
 
+/* Exchange mutation:
+ * Input:
+ *  *ind: pointer to the individual that will mutate (length ncities-1)
+ *  ncities: total number of cities
+ * Output:
+ *  *ind: is rewritten
+ */
 int exchangeM(int *ind, size_t ncities) {
     int aux;
     int pos1 = rand()%(ncities-1); 
@@ -85,12 +133,23 @@ int exchangeM(int *ind, size_t ncities) {
     return 0;
 }
 
+/* Displacement mutation:
+ * Input:
+ *  *ind: pointer to the individual that will mutate (length ncities-1)
+ *  ncities: total number of cities
+ * Output:
+ *  *ind: is rewritten
+ */
 int displacementM(int *ind, size_t ncities){
+    /* Loop variables */
+    int i,j;
+    /* Substring selection */
+    int pos1,pos2,pos3,aux;
+    /* Individual backup */
     int copy[ncities-1];
-    int i,j,aux;
-    int pos1,pos2,pos3;
     for(i=0;i<ncities-1;i++)
-        copy[i] = -1;//first we initialize the vector 
+        copy[i] = -1;
+    /* Substring selection, make sure pos1<pos2 */
     pos1 = rand()%(ncities-1);
     pos2 = rand()%(ncities-1);//we select two positions and we have to compare which one is greater
     if(pos1>pos2) {
@@ -98,13 +157,17 @@ int displacementM(int *ind, size_t ncities){
         pos2 = pos1;
         pos1 = aux;
     }
+    /* Final position selection, cannot overflow the vector and also has to
+     * be different than pos1 to have mutation */
     do {
         pos3 = rand()%(ncities-1-(pos2-pos1));//position where we displace the chunk
     } while(pos3==pos1);
+    /* Copy substring to backup and erase from individual */
     for(i=pos1;i<=pos2;i++) {
-              copy[i+pos3-pos1] = ind[i];//we copy the chunk of the vector displaced
-              ind[i] = -1;//we erase the part we copied in the original vector
+          copy[i+pos3-pos1] = ind[i];
+          ind[i] = -1;
     }
+    /* Move other cities to the right */
     if(pos3>pos1) {
          j = ncities-2;
          for(i=ncities-2;i>=0;i--) {
@@ -116,6 +179,7 @@ int displacementM(int *ind, size_t ncities){
          for(i=0;i<pos1;i++)
              copy[i] = ind[i];
     }
+    /* Move other cities to the left */
     if(pos3<pos1) {
         j = 0;
         for(i=0;i<ncities-1;i++) {
@@ -127,6 +191,7 @@ int displacementM(int *ind, size_t ncities){
          for(i=ncities-2;i>pos2;i--)
              copy[i] = ind[i];
     }
+    /* Restore backup to individual */
     if(pos3!=pos1)
         for(i=0;i<ncities-1;i++)
             ind[i] = copy[i];

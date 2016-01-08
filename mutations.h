@@ -1,6 +1,6 @@
 #ifndef M_CHILD
 #define M_CHILD
-int mutateChild(int *child, size_t ncities, double mutationrate);
+int mutateChild(int *child, size_t ncities);
 #endif
 
 #ifndef M_APPLY

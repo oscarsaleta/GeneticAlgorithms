@@ -18,16 +18,6 @@ int generatePopulation(int *cities, int **pop, size_t ncities, size_t popsize, i
 int calculateFitness(int *pop, int **mat, size_t ncities, int bcn);
 #endif
 
-#ifndef F_FITTEST
-#define F_FITTEST
-int fittest(int **pop, int **mat, size_t ncities, size_t popsize, int **next, int n, int bcn);
-#endif
-
-#ifndef F_ROULETTE
-#define F_ROULETTE
-int roulette(int **pop, int **mat, size_t ncities, size_t popsize, int **next, int n, int bcn);
-#endif
-
 #ifndef F_TOURNAMENT
 #define F_TOURNAMENT
 int tournament (int **pop, int **mat, size_t ncities, size_t popsize, size_t samplesize, int **next, int t, int bcn);
@@ -35,12 +25,12 @@ int tournament (int **pop, int **mat, size_t ncities, size_t popsize, size_t sam
 
 #ifndef F_DOUBLE_FREE_INT
 #define F_DOUBLE_FREE_INT
-int doubleFreeInt(int **v, size_t dim2);
+int doubleFreeInt(int **v, size_t dim);
 #endif
 
 #ifndef F_DOUBLE_FREE_CHAR
 #define F_DOUBLE_FREE_CHAR
-int doubleFreeChar(char **v, size_t dim2);
+int doubleFreeChar(char **v, size_t dim);
 #endif
 
 #ifndef PRINT_POP

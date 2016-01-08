@@ -5,23 +5,43 @@
 
 #include "genericFunctions.h"
 
+/* Read cities:
+ *  Reads taulaciutats.csv file and stores the distance matrix in **mat,
+ *  and the city names in **strs.
+ * Input:
+ *  **mat: (ncities)*(ncities) distance matrix
+ *  **strs: (ncities)*(d_strs2) city names
+ *  ncities: total number of cities
+ *  d_strs2: max length of city names
+ * Output:
+ *  **mat: is modified and will contain distance matrix
+ *  **strs: is modified and will contain city names
+ */
 int readCities(int **mat, char **strs, size_t ncities, size_t d_strs2) {
+    /* Buffer variable to store one line of the .csv file each time */
     char buffer[305];
+    /* Tokenizer for the buffer */
     char *record;
+    /* Loop variables */
     int i=0,j=0;
+    /* File to read */
     FILE *fstream = fopen("taulaciutats.csv","r");
     if(fstream == NULL) {
         fprintf(stderr,"readCities:: file opening failed\n");
         return 1 ;
     }
-
+    /* Read first line and discard */
     fgets(buffer,305,fstream);
     buffer[0] = '\0';
+    /* Loop for the rest of the file */
     for (i=0;i<=ncities;i++) {
+        /* Get line */
         fgets(buffer,305,fstream);
         if (i>0) {
+            /* Get first token (city name) and store it */
             record = strtok(buffer,";");
             strcpy(strs[i-1],record);
+            /* Loop to get all the distances for each line */
             j=1;
             while((record=strtok(NULL,";"))!=NULL) {
                 if (!strcmp(record,"-"))
@@ -39,14 +59,29 @@ int readCities(int **mat, char **strs, size_t ncities, size_t d_strs2) {
     return 0;
 }
 
+/* Shuffle:
+ *  Shuffle a vector of cities to generate a random individual
+ * Input:
+ *  *cities: (ncities-1) empty dummy vector, used to avoid allocation at every call
+ *  *pop: (n) emtpy individual
+ *  ncities: total number of cities
+ *  n: size of individual
+ *  bcn: number of Barcelona in the distance matrix (3)
+ * Output:
+ *  *cities: not usable output
+ *  *pop: brand new random city route
+ */
 int shuffle(int *cities, int *pop, size_t ncities, int n, int bcn) {
+    /* Loop variable */
     int i;
-    for (i=0;i<ncities-1;i++) { //here we initialize the vector we will use to create the population
+    /* Initialize cities with all cities except Barcelona */
+    for (i=0;i<ncities-1;i++) {
        if (i<(bcn-1))
            cities[i] = i;
        else
            cities[i] = i+1;                      
     }
+    /* Change the order of the cities */
     if (n>1) {
         for (i=0;i<n-1;i++) {
           int j = i+rand()/(RAND_MAX/(n-i)+1);
@@ -55,11 +90,24 @@ int shuffle(int *cities, int *pop, size_t ncities, int n, int bcn) {
           cities[i] = t;
         }
     }
+    /* Copy the result to pop */
     for(i=0;i<n;i++)
         pop[i] = cities[i];
     return 0;
 }
 
+/* Generate population:
+ *  Uses shuffle to generate popsize random routes
+ * Input:
+ *  *cities: (ncities-1) dummy city vector for shuffle
+ *  **pop: (popsize)*(ncities-1) population matrix
+ *  ncities: total number of cities
+ *  popsize: number of individuals in population
+ *  bcn: Barcelona (3)
+ * Output:
+ *  *cities: not usable output
+ *  **pop: population matrix of random individuals
+ */
 int generatePopulation(int *cities, int **pop, size_t ncities, size_t popsize, int bcn) {
      int i;
      for(i=0;i<popsize;i++) {
@@ -68,6 +116,17 @@ int generatePopulation(int *cities, int **pop, size_t ncities, size_t popsize, i
      return 0;
 }
 
+/* Calculate fitness:
+ *  IMPORTANT: in this implementation, the fittest is the individual with LOWER
+ *  fitness (because fitness is computed as the total distance travelled)
+ * Input:
+ *  *pop: (ncities-1) individual (route) to measure
+ *  **mat: (ncities)*(ncities) distance matrix
+ *  ncities: total number of cities
+ *  bcn: Barcelona (3)
+ * Return:
+ *  Value for the fitness of the individual
+ */
 int calculateFitness(int *pop, int **mat, size_t ncities, int bcn){
     int i;
     int fitness;
@@ -83,70 +142,37 @@ int calculateFitness(int *pop, int **mat, size_t ncities, int bcn){
     return fitness;
 }
 
-int fittest(int **pop, int **mat, size_t ncities, size_t popsize, int **next, int n, int bcn){
-    //FALTA COMPROVAR n is the number of individuals that will survive and we shall save them in nextGen
-    int i,j=0,k=-1;
-    int fitness[popsize];
-    int low,last=0;
-    for (i=0;i<popsize;i++) {
-        fitness[i] = calculateFitness(pop[i],mat,ncities,bcn);
-    }
-    while (j<n) {
-        low = 50000;
-        for (i=0;i<popsize;i++) { //we want to find the n fittest individuals
-            if( fitness[i]<low || fitness[i]>=last){
-                low = fitness[i];            
-                k = i;
-            }    
-        }
-        for (i=0;i<ncities-1;i++)
-            next[j][i] = pop[k][i];//we copy the chosen vector into next gen
-        last = low; //this will be our lower bound
-        j++;                        
-    }
-    return 0;
-}
-
-int roulette(int **pop, int **mat, size_t ncities, size_t popsize, int **next, int n, int bcn){
-    //n is the number of individuals we want to pass to the next generation.
-    int i,j,k;
-    int fitness[popsize];
-    double sum=0, partialsum=0;
-    int r=0;
-    for (i=0;i<popsize;i++) {
-        fitness[i] = calculateFitness(pop[i],mat,ncities,bcn);
-        sum += fitness[i]; //we sum their fitnesses
-    }
-    j = 0;
-    while (j<n) { //we do as many roulette throws as individuals we want to save
-        r = rand()%((int)sum-1)+1; //this is where the roulette stops (we don't want a zero here so that at least we have to do the following once
-        i = -1;
-        while (partialsum < r) {//with this we find in which element the roulette landed
-             i++;
-             partialsum += fitness[i];
-        }
-        for (k=0;k<ncities-1;k++)
-            fprintf(stderr,"%d,%d,%d\n",i,j,k);
-            next[j][k] = pop[i][k];
-        j++;
-        sum = 0;
-        partialsum = 0;
-    }
-    return 0;
-}
-
+/* Tournament selection:
+ *  Pick one individual at random, make it compete with other t individuals picked at random,
+ *  and return the best of them. Repeat for the number of parents we want.
+ * Input:
+ *  **pop: (popsize)*(ncities-1) population matrix
+ *  **mat: (ncities)*(ncities) distance matrix
+ *  samplesize: how many parents do we want to find
+ *  **next: (samplesize)*(ncities-1) matrix with all the parents
+ *  t: tournament size
+ *  bcn: Barcelona (3)
+ * Output:
+ *  **next: is modified, will contain the parents found in the tournament
+ */
 int tournament(int **pop, int **mat, size_t ncities, size_t popsize, size_t samplesize, int **next, int t, int bcn) {
+    /* Loop variables */
     int i,j;
+    /* Best, contender and their fitness */
     int *best,*contender;
     int fitbest,fitcontender;
 
+    /* This routine is really simple to parallelize and it will improve
+     * execution time significantly */
     #pragma omp parallel num_threads(4)
     {
         #pragma omp for
         for (i=0; i<samplesize; i++) {
+            /* Pick first at random and compute fitness */
             best = pop[rand()%popsize];
             fitbest = calculateFitness(best,mat,ncities,bcn);
             for (j=1;j<t;j++) {
+                /* Compete with random contender */
                 contender = pop[rand()%popsize];
                 fitcontender = calculateFitness(contender,mat,ncities,bcn);
                 if (fitcontender < fitbest) {
@@ -154,6 +180,7 @@ int tournament(int **pop, int **mat, size_t ncities, size_t popsize, size_t samp
                     fitbest = fitcontender;
                 }
             }
+            /* Copy the best to the parents matrix */
             memcpy(next[i],best,(ncities-1)*sizeof(int));
         }
     }
@@ -161,21 +188,20 @@ int tournament(int **pop, int **mat, size_t ncities, size_t popsize, size_t samp
     return 0;
 }
 
-int doubleFreeInt(int **v, size_t dim2) {
+/* Double free routines:
+ *  Functions to ease the process of freeing memory for double pointers
+ */
+int doubleFreeInt(int **v, size_t dim) {
     int i;
-    for (i=0;i<dim2;i++)
-        free(v[i]);
-    free(v);
-    return 0;
-}
-int doubleFreeChar(char **v, size_t dim2) {
-    int i;
-    for (i=0;i<dim2;i++)
+    for (i=0;i<dim;i++)
         free(v[i]);
     free(v);
     return 0;
 }
 
+/* Print population:
+ *  (Debugging purposes) Auxiliar function to make population printing faster
+ */
 int printPop(int **pop, size_t popsize, size_t ncities, FILE *out) {
     int i,j;
     for (i=0;i<popsize;i++) {
